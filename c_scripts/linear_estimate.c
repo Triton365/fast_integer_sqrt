@@ -3,7 +3,7 @@
 #include "isqrt.c"
 
 
-bool linear_collide_ceil(int64_t startx, int64_t divisior, int64_t *bestendx, int64_t *bestdiv, int64_t *bestaddmin, int64_t *bestaddmax) {
+bool linear_touch_ceil(int64_t startx, int64_t divisior, int64_t *bestendx, int64_t *bestdiv, int64_t *bestaddmin, int64_t *bestaddmax) {
     int64_t divm1 = divisior-1;
     int64_t x = startx;
     int64_t estimate = x/divisior;
@@ -55,7 +55,7 @@ void find_best_linear_estimate(int64_t startx, int64_t *outendx, int64_t *outdiv
     while (1) {
         //printf("searching div=%lld~%lld\n",divmin,divmax);
         divmid = (divmin+divmax)>>1;
-        bool check = linear_collide_ceil(startx,divmid,&bestendx,&bestdiv,&bestaddmin,&bestaddmax);
+        bool check = linear_touch_ceil(startx,divmid,&bestendx,&bestdiv,&bestaddmin,&bestaddmax);
         if (bestendx >= 2147483647)
             break;
         if (check)
