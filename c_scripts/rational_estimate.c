@@ -153,8 +153,8 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
             a_best_right = ((a*1.5)+TEST_RANGE)*1.5+TEST_RANGE;
         }
     }
-    a_left = a_best_left;
-    a_right = a_best_right;
+    a_left = max(0,a_best_left);
+    a_right = min(2147483647,a_best_right);
 
 
     int64_t golden_offset = (int64_t)floor((a_right - a_left)*0.381966011250105);
