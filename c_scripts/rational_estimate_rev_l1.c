@@ -5,13 +5,13 @@
 #include "libdivide.h"
 
 
-int64_t herons_lowerbound_l1(int64_t x, int64_t y) {
-    int64_t y2 = y<<1;
-    int64_t left=1, right=y;
+int32_t herons_lowerbound_l1(int32_t x, int32_t y) {
+    int32_t y2 = y<<1;
+    int32_t left=1, right=y;
     if (left >= right) return left;
-    int64_t mid = (left+right)>>1;
+    int32_t mid = (left+right)>>1;
     while (1) {
-        int64_t check = mid+floordiv(x,mid)-y2;
+        int32_t check = mid+x/mid-y2;
         if (0 <= check && check <= 3) {
             if (left==mid) return mid;
             right = mid;
@@ -25,12 +25,12 @@ int64_t herons_lowerbound_l1(int64_t x, int64_t y) {
     }
 }
 
-int64_t herons_upperbound_l1(int64_t x, int64_t y) {
-    int64_t y2 = y<<1;
-    int64_t left=y+1, right=46773;
-    int64_t mid = (left+right)>>1;
+int32_t herons_upperbound_l1(int32_t x, int32_t y) {
+    int32_t y2 = y<<1;
+    int32_t left=y+1, right=46773;
+    int32_t mid = (left+right)>>1;
     while (1) {
-        int64_t check = mid+floordiv(x,mid)-y2;
+        int32_t check = mid+x/mid-y2;
         if (0 <= check && check <= 3) {
             if (right==++mid) return mid-1;
             left = mid;
@@ -44,25 +44,27 @@ int64_t herons_upperbound_l1(int64_t x, int64_t y) {
     }
 }
 
-bool rational_touch_ceil_rev_l1(bool is_div, int64_t a, int64_t b, int64_t startx, int64_t *outendx, int64_t *outcmin, int64_t *outcmax) {
-    int64_t x = startx;
-    int64_t sqrtx = isqrt(x);
-    int64_t sqrtx2 = sqrtx<<1;
-    int64_t ma = -a;
-    int64_t sqrtnext = x - sqrtx*sqrtx;
-    int64_t estimate,check;
-    struct libdivide_s64_t fast_a;
+bool rational_touch_ceil_rev_l1(bool is_div, int64_t ina, int64_t inb, int64_t startx, int64_t *outendx, int64_t *outcmin, int64_t *outcmax) {
+    int32_t a = (int64_t)ina;
+    int32_t b = (int64_t)inb;
+    int32_t x = (int64_t)startx;
+    int32_t ma = -a;
+    int32_t sqrtx = (int32_t)sqrt(x);
+    int32_t sqrtx2 = sqrtx<<1;
+    int32_t sqrtnext = x - sqrtx*sqrtx;
+    int32_t estimate,check;
+    struct libdivide_s32_t fast_a;
     if (is_div) {
-        fast_a = libdivide_s64_gen(a);
-        estimate = libdivide_s64_do(x,&fast_a) + b;
+        fast_a = libdivide_s32_gen(a);
+        estimate = libdivide_s32_do(x,&fast_a) + b;
         estimate = (-2147483468)/estimate - ((-2147483468)%estimate!=0);
     } else {
         estimate = x+b;
         estimate = ma/estimate - (ma%estimate!=0);
     }
-    int64_t upper = herons_upperbound_l1(x,sqrtx)-estimate;
-    int64_t lower = herons_lowerbound_l1(x,sqrtx)-estimate;
-    int64_t t;
+    int32_t upper = herons_upperbound_l1(x,sqrtx)-estimate;
+    int32_t lower = herons_lowerbound_l1(x,sqrtx)-estimate;
+    int32_t t;
     for (x=x-1; x>=0; x--) {
         sqrtnext--;
         if (sqrtnext == -1) {
@@ -71,7 +73,7 @@ bool rational_touch_ceil_rev_l1(bool is_div, int64_t a, int64_t b, int64_t start
             sqrtnext = sqrtx2;
         }
         if (is_div) {
-            estimate = libdivide_s64_do(x,&fast_a) + b;
+            estimate = libdivide_s32_do(x,&fast_a) + b;
             estimate = (-2147483468)/estimate - ((-2147483468)%estimate!=0);
         } else {
             estimate = x+b;
@@ -90,18 +92,18 @@ bool rational_touch_ceil_rev_l1(bool is_div, int64_t a, int64_t b, int64_t start
             upper = herons_upperbound_l1(x,sqrtx)-estimate;
         }
     }
-    *outendx = x+1;
-    *outcmin = lower;
-    *outcmax = upper;
+    *outendx = (int64_t)(x+1);
+    *outcmin = (int64_t)lower;
+    *outcmax = (int64_t)upper;
     if (is_div) {
-        estimate = libdivide_s64_do(x,&fast_a) + b;
+        estimate = libdivide_s32_do(x,&fast_a) + b;
         estimate = (-2147483468)/estimate - ((-2147483468)%estimate!=0);
     } else {
         estimate = x+b;
         estimate = ma/estimate - (ma%estimate!=0);
     }
     estimate += upper;
-    upper = herons_upperbound_l1(x,isqrt(x));
+    upper = herons_upperbound_l1(x,(int32_t)sqrt(x));
     return (estimate > upper);
 }
 
