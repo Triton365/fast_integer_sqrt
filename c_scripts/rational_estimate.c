@@ -1,59 +1,70 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#define HERONS_LOOP 1
 #include "isqrt.c"
+#include "libdivide.h"
 
 
-typedef int64_t (*estimate_func)(int64_t,int64_t,int64_t,int64_t);
-
-int64_t estimate_func_no_div(int64_t a, int64_t b, int64_t c, int64_t x) {
-    int64_t g = x + b;
-    a *= -1;
-    g = floordiv(a,g) + c;
-    return g;
-}
-
-int64_t estimate_func_div(int64_t a, int64_t b, int64_t c, int64_t x) {
-    int64_t g = floordiv(x,a) + b;
-    g = floordiv(-2147483648,g) + c;
-    return g;
-}
-
-
-bool rational_touch_ceil(estimate_func func, int64_t a, int64_t b, int64_t startx, int64_t *outendx, int64_t *outcmin, int64_t *outcmax) {
-    int64_t x = startx;
-    int64_t sqrtx = isqrt(x);
-    int64_t sqrtnext = (sqrtx<<1) - x + sqrtx*sqrtx;
-    int64_t estimate = (*func)(a,b,0,x);
-    int64_t upper = herons_upperbound(x,sqrtx)-estimate;
-    int64_t lower = herons_lowerbound(x,sqrtx)-estimate;
-    int64_t t;
+bool rational_touch_ceil(bool is_div, int64_t ina, int64_t inb, int64_t startx, int64_t *outendx, int64_t *outcmin, int64_t *outcmax) {
+    int32_t a = (int32_t)ina;
+    int32_t b = (int32_t)inb;
+    int32_t x = (int32_t)startx;
+    int32_t ma = -a;
+    int32_t sqrtx = isqrt(x);
+    int32_t sqrtnext = (sqrtx<<1) - x + sqrtx*sqrtx;
+    int32_t estimate;
+    struct libdivide_s32_t fast_a;
+    if (is_div) {
+        fast_a = libdivide_s32_gen(a);
+        estimate = libdivide_s32_do(x,&fast_a) + b;
+        estimate = (-2147483468)/estimate - ((-2147483468)%estimate!=0);
+    } else {
+        estimate = x+b;
+        estimate = ma/estimate - (ma%estimate!=0);
+    }
+    int32_t upper = herons_upperbound(x,sqrtx)-estimate;
+    int32_t lower = herons_lowerbound(x,sqrtx)-estimate;
+    int32_t t;
     for (x=x+1; x<=2147483647; x++) {
         sqrtnext--;
         if (sqrtnext == -1) {
             sqrtx++;
             sqrtnext = sqrtx<<1;
         }
-        estimate = (*func)(a,b,0,x);
-        if (sqrtx != herons_method(x,estimate+lower)) {
+        if (is_div) {
+            estimate = libdivide_s32_do(x,&fast_a) + b;
+            estimate = (-2147483468)/estimate - ((-2147483468)%estimate!=0);
+        } else {
+            estimate = x+b;
+            estimate = ma/estimate - (ma%estimate!=0);
+        }
+        if (!herons_method_check(x,estimate+lower,sqrtx)) {
             t = herons_lowerbound(x,sqrtx)-estimate;
             if (upper < t || t < lower) break;
             lower = t;
         }
-        if (sqrtx != herons_method(x,estimate+upper)) {
+        if (!herons_method_check(x,estimate+upper,sqrtx)) {
             upper = herons_upperbound(x,sqrtx)-estimate;
         }
     }
     *outendx = x-1;
     *outcmin = lower;
     *outcmax = upper;
-    estimate = (*func)(a,b,upper,x);
+    if (is_div) {
+        estimate = libdivide_s32_do(x,&fast_a) + b;
+        estimate = (-2147483468)/estimate - ((-2147483468)%estimate!=0);
+    } else {
+        estimate = x+b;
+        estimate = ma/estimate - (ma%estimate!=0);
+    }
+    estimate += upper;
     upper = herons_upperbound(x,isqrt(x));
     return (estimate > upper);
 }
 
 
-void find_best_rational_estimate_with_a(estimate_func func, int64_t a, int64_t startx, int64_t *outendx, int64_t *outb, int64_t *outcmin, int64_t *outcmax) {
+void find_best_rational_estimate_with_a(bool is_div, int64_t a, int64_t startx, int64_t *outendx, int64_t *outb, int64_t *outcmin, int64_t *outcmax) {
     int64_t minb = 0;
     int64_t maxb = 2147483647;
     int64_t endx,cmin,cmax;
@@ -61,7 +72,7 @@ void find_best_rational_estimate_with_a(estimate_func func, int64_t a, int64_t s
     // binary search
     while (1) {
         int64_t b = (minb+maxb)>>1;
-        bool check = rational_touch_ceil(func,a,b,startx,&endx,&cmin,&cmax);
+        bool check = rational_touch_ceil(is_div,a,b,startx,&endx,&cmin,&cmax);
         if (bestendx < endx) {
             bestendx=endx; bestb=b; bestcmin=cmin; bestcmax=cmax;
             if (endx >= 2147483647) break;
@@ -69,7 +80,7 @@ void find_best_rational_estimate_with_a(estimate_func func, int64_t a, int64_t s
         if (check) {
             minb = b+1;
             if (minb == maxb) {
-                rational_touch_ceil(func,a,minb,startx,&endx,&cmin,&cmax);
+                rational_touch_ceil(is_div,a,minb,startx,&endx,&cmin,&cmax);
                 if (bestendx < endx) {
                     bestendx=endx; bestb=minb; bestcmin=cmin; bestcmax=cmax;
                 }
@@ -93,24 +104,21 @@ void find_best_rational_estimate_with_a(estimate_func func, int64_t a, int64_t s
 #define max(x,y) ((x)<(y) ? (y) : (x))
 
 void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, int64_t *outa, int64_t *outb, int64_t *outcmin, int64_t *outcmax) {
-    estimate_func func;
     int64_t a, a_left, a_right;
     int64_t endx,b,cmin,cmax;
     int64_t bestendx=-1,besta=-1,bestb=-1,bestcmin=-1,bestcmax=-1;
     if (is_div) {
-        func = estimate_func_div;
         a_left = 1;
         a_right = 16777215;
     } else {
-        func = estimate_func_no_div;
         a_left = 1;
         a_right = 2147483647;
     }
 
-    if (startx == 0 && herons_loop == 1) {
+    if (startx == 0 && HERONS_LOOP == 1) {
         printf("linear search a=[1~1000000]");
         for (a=1;a<=1000000;a++) {
-            find_best_rational_estimate_with_a(estimate_func_no_div,a,startx,&endx,&b,&cmin,&cmax);
+            find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
             if (bestendx < endx) {
                 printf("a=%lld;b=%lld;c=[%lld~%lld];endx=%lld;\n",a,b,cmin,cmax,endx);
                 bestendx=endx; besta=a; bestb=b; bestcmin=cmin; bestcmax=cmax;
@@ -122,7 +130,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
 
     // for (a=100000; a<=a_right; a=a+1) {
     //     printf("a=%lld\n",a);
-    //     find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+    //     find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
     //     if (bestendx < endx) {
     //         printf("a=%lld;b=%lld;c=[%lld~%lld];endx=%lld;\n",a,b,cmin,cmax,endx);
     //         bestendx=endx; besta=a; bestb=b; bestcmin=cmin; bestcmax=cmax;
@@ -138,7 +146,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
         printf("a=%lld\n",a);
         int64_t a_endx = -1;
         for (int64_t i=0; i<TEST_RANGE; i++) {
-            find_best_rational_estimate_with_a(func,a-i,startx,&endx,&b,&cmin,&cmax);
+            find_best_rational_estimate_with_a(is_div,a-i,startx,&endx,&b,&cmin,&cmax);
             if (a_endx < endx)
                 a_endx = endx;
             if (bestendx < endx) {
@@ -169,7 +177,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
     if (a_left_golden_right+1 >= a_right_golden_left) {
         printf("final search a=[%lld~%lld]\n",a_left,a_right);
         for (a=a_left; a<=a_right; a++) {
-            find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+            find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
             if (bestendx < endx) {
                 printf("a=%lld;b=%lld;c=[%lld~%lld];endx=%lld;\n",a,b,cmin,cmax,endx);
                 bestendx=endx; besta=a; bestb=b; bestcmin=cmin; bestcmax=cmax;
@@ -181,7 +189,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
 
         int64_t a_left_golden_endx = -1;
         for (a=a_left_golden_left; a<=a_left_golden_right; a++) {
-            find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+            find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
             if (a_left_golden_endx < endx)
                 a_left_golden_endx = endx;
             if (bestendx < endx) {
@@ -193,7 +201,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
 
         int64_t a_right_golden_endx = -1;
         for (a=a_right_golden_left; a<=a_right_golden_right; a++) {
-            find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+            find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
             if (a_right_golden_endx < endx)
                 a_right_golden_endx = endx;
             if (bestendx < endx) {
@@ -218,7 +226,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
                 if (a_left_golden_right+1 >= a_right_golden_left) {
                     printf("final search a=[%lld~%lld]\n",a_left,a_right);
                     for (a=a_left; a<a_left_golden_left; a++) {
-                        find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+                        find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
                         if (bestendx < endx) {
                             printf("a=%lld;b=%lld;c=[%lld~%lld];endx=%lld;\n",a,b,cmin,cmax,endx);
                             bestendx=endx; besta=a; bestb=b; bestcmin=cmin; bestcmax=cmax;
@@ -226,7 +234,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
                         }
                     }
                     for (a=a_left_golden_right+1; a<=a_right; a++) {
-                        find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+                        find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
                         if (bestendx < endx) {
                             printf("a=%lld;b=%lld;c=[%lld~%lld];endx=%lld;\n",a,b,cmin,cmax,endx);
                             bestendx=endx; besta=a; bestb=b; bestcmin=cmin; bestcmax=cmax;
@@ -238,7 +246,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
                 printf("golden section search a=[%lld~%lld~%lld~%lld]\n",a_left,a_left_golden,a_right_golden,a_right);
                 a_right_golden_endx = -1;
                 for (a=a_right_golden_left; a<=a_right_golden_right; a++) {
-                    find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+                    find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
                     if (a_right_golden_endx < endx)
                         a_right_golden_endx = endx;
                     if (bestendx < endx) {
@@ -260,7 +268,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
                 if (a_left_golden_right+1 >= a_right_golden_left) {
                     printf("final search a=[%lld~%lld]\n",a_left,a_right);
                     for (a=a_left; a<a_right_golden_left; a++) {
-                        find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+                        find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
                         if (bestendx < endx) {
                             printf("a=%lld;b=%lld;c=[%lld~%lld];endx=%lld;\n",a,b,cmin,cmax,endx);
                             bestendx=endx; besta=a; bestb=b; bestcmin=cmin; bestcmax=cmax;
@@ -268,7 +276,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
                         }
                     }
                     for (a=a_right_golden_right+1; a<=a_right; a++) {
-                        find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+                        find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
                         if (bestendx < endx) {
                             printf("a=%lld;b=%lld;c=[%lld~%lld];endx=%lld;\n",a,b,cmin,cmax,endx);
                             bestendx=endx; besta=a; bestb=b; bestcmin=cmin; bestcmax=cmax;
@@ -280,7 +288,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
                 printf("golden section search a=[%lld~%lld~%lld~%lld]\n",a_left,a_left_golden,a_right_golden,a_right);
                 a_left_golden_endx = -1;
                 for (a=a_left_golden_left; a<=a_left_golden_right; a++) {
-                    find_best_rational_estimate_with_a(func,a,startx,&endx,&b,&cmin,&cmax);
+                    find_best_rational_estimate_with_a(is_div,a,startx,&endx,&b,&cmin,&cmax);
                     if (a_left_golden_endx < endx)
                         a_left_golden_endx = endx;
                     if (bestendx < endx) {
@@ -310,7 +318,6 @@ int main(void) {
 	int64_t startx,endx,a,b,cmin,cmax;
     bool is_div;
 
-    herons_loop = 1;
     startx=0; is_div=false;
 
     find_best_rational_estimate(startx,is_div,&endx,&a,&b,&cmin,&cmax);

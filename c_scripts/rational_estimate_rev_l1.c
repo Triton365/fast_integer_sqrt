@@ -45,9 +45,9 @@ int32_t herons_upperbound_l1(int32_t x, int32_t y) {
 }
 
 bool rational_touch_ceil_rev_l1(bool is_div, int64_t ina, int64_t inb, int64_t startx, int64_t *outendx, int64_t *outcmin, int64_t *outcmax) {
-    int32_t a = (int64_t)ina;
-    int32_t b = (int64_t)inb;
-    int32_t x = (int64_t)startx;
+    int32_t a = (int32_t)ina;
+    int32_t b = (int32_t)inb;
+    int32_t x = (int32_t)startx;
     int32_t ma = -a;
     int32_t sqrtx = (int32_t)sqrt(x);
     int32_t sqrtx2 = sqrtx<<1;
@@ -187,8 +187,8 @@ void find_best_rational_estimate_rev_l1(int64_t startx, bool is_div, int64_t *ou
     // a_left = max(0,a_best_left);
     // a_right = min(2147483647,a_best_right);
 
-    a_left = 50835;
-    a_right = 178552;
+    a_left = 95219;
+    a_right = 96257;
 
 
     int64_t golden_offset = (int64_t)floor((a_right - a_left)*0.381966011250105);
@@ -400,6 +400,36 @@ a=386245
 golden section search a=[50835~129768~178552~257485]
 a=129760;b=23910;c=[99539~99539];endx=329858244;
 329858244 vs 418202500
-golden section search a=[50835~99618~129768~178552]
+golden section search a=[50835~99618~129769~178552]
 a=99610;b=26090;c=[91183~91183];endx=270767025;
+270767025 vs 329858244
+golden section search a=[50835~80985~99618~129769]
+844309249 vs 270767025
+golden section search a=[80985~99618~111136~129769]
+270767025 vs 293642496
+golden section search a=[80985~92501~99618~111136]
+643028164 vs 270767025
+golden section search a=[92501~99618~104019~111136]
+270767025 vs 279825984
+golden section search a=[92501~96900~99618~104019]
+a=96892;b=26329;c=[90351~90351];endx=265396681;
+a=96896;b=26328;c=[90354~90354];endx=265233796;
+a=96898;b=26327;c=[90356~90356];endx=265136089;
+265136089 vs 270767025
+golden section search a=[92501~95219~96900~99618]
+506295001 vs 265136089
+golden section search a=[95219~96900~97938~99618]
+265136089 vs 267387904
+golden section search a=[95219~96257~96900~97938]
+a=96249;b=26386;c=[90154~90154];endx=263932516;
+a=96258;b=26385;c=[90157~90157];endx=263867536;
+263867536 vs 265136089
+golden section search a=[95219~95861~96257~96900]
+a=95853;b=26423;c=[90029~90029];endx=263315529;
+a=95855;b=26422;c=[90031~90031];endx=263218176;
+a=95856;b=26422;c=[90031~90031];endx=263055961;
+263055961 vs 263867536
+golden section search a=[95219~95615~95861~96257]
+a=95607;b=26445;c=[89953~89953];endx=262731681;
+a=95609;b=26444;c=[89955~89955];endx=262472401;
 */

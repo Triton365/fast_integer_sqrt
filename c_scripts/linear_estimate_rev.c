@@ -1,21 +1,25 @@
 #include <stdio.h>
 #include <stdbool.h>
+#define HERONS_LOOP 1
 #include "isqrt.c"
 
 
-bool linear_touch_ceil_rev(int64_t startx, int64_t divisior, int64_t *bestendx, int64_t *bestdiv, int64_t *bestaddmin, int64_t *bestaddmax) {
-    int64_t divm1 = divisior-1;
-    int64_t x = startx;
-    int64_t estimate = x/divisior;
-    int64_t estimatenext = x%divisior;
-    int64_t sqrtx = isqrt(x);
-    int64_t sqrtnext = x - sqrtx*sqrtx;
-    int64_t lower = herons_lowerbound(x,sqrtx)-estimate;
-    int64_t upper = herons_upperbound(x,sqrtx)-estimate;
-    int64_t t;
+bool linear_touch_ceil_rev(int64_t startx, int64_t div, int64_t *bestendx, int64_t *bestdiv, int64_t *bestaddmin, int64_t *bestaddmax) {
+    int32_t divisior = (int32_t)div;
+    if (divisior == 0) divisior = 1;
+    int32_t divm1 = divisior-1;
+    int32_t x = (int32_t)startx;
+    int32_t estimate = x/divisior;
+    int32_t estimatenext = x%divisior;
+    int32_t sqrtx = isqrt(x);
+    int32_t sqrtnext = x - sqrtx*sqrtx;
+    int32_t lower = herons_lowerbound(x,sqrtx)-estimate;
+    int32_t upper = herons_upperbound(x,sqrtx)-estimate;
+    int32_t t;
     
-
-    for (x=x-1; x>=0; x--) {
+    while (1) {
+        x--;
+        if (x == -1) break;
         estimatenext--;
         if (estimatenext == -1) {
             estimate--;
@@ -26,21 +30,21 @@ bool linear_touch_ceil_rev(int64_t startx, int64_t divisior, int64_t *bestendx, 
             sqrtx--;
             sqrtnext = sqrtx<<1;
         }
-        if (sqrtx != herons_method(x,estimate+lower)) {
+        if (!herons_method_check(x,estimate+lower,sqrtx)) {
             t = herons_lowerbound(x,sqrtx)-estimate;
             if (upper < t || t < lower) break;
             lower = t;
         }
-        if (sqrtx != herons_method(x,estimate+upper)) {
+        if (!herons_method_check(x,estimate+upper,sqrtx)) {
             upper = herons_upperbound(x,sqrtx)-estimate;
         }
     }
     x++;
     if (x < (*bestendx)) {
-        *bestendx = x;
-        *bestdiv = divisior;
-        *bestaddmin = lower;
-        *bestaddmax = upper;
+        *bestendx = (int64_t)x;
+        *bestdiv = (int64_t)div;
+        *bestaddmin = (int64_t)lower;
+        *bestaddmax = (int64_t)upper;
         if (x==0) return true;
     }
     x--;
@@ -54,7 +58,7 @@ void find_best_linear_estimate_rev(int64_t startx, int64_t *outendx, int64_t *ou
     int64_t divmax = 2147483647;
     int64_t divmid,bestendx=startx,bestdiv,bestaddmin,bestaddmax;
     while (1) {
-        printf("searching div=%lld~%lld\n",divmin,divmax);
+        // printf("searching div=%lld~%lld\n",divmin,divmax);
         divmid = (divmin+divmax)>>1;
         bool check = linear_touch_ceil_rev(startx,divmid,&bestendx,&bestdiv,&bestaddmin,&bestaddmax);
         if (bestendx <= 0) break;
@@ -76,7 +80,6 @@ void find_best_linear_estimate_rev(int64_t startx, int64_t *outendx, int64_t *ou
 int main(void) {
     int64_t startx=0,endx=0,div,bestdiv,addmin,addmax;
 
-    herons_loop = 2;
     startx = 2147483647;
 
     while (startx >= 0) {
@@ -92,27 +95,23 @@ int main(void) {
 }
 
 /*
-herons_loop = 3;
-if score x matches 0..1515359 : estimate = x/559 + 15
-if score x matches 1515360..2147483647 : estimate = x/32768 + [2456~2677]
+#define HERONS_LOOP 2
+if score x matches 93605625..2147483647 : estimate = x/50704 + 9628
+if score x matches 1669264..93605624 : estimate = x/9424 + 1538
+if score x matches 4624..1669263 : estimate = x/1048 + 122
+if score x matches 0..4623 : estimate = x/64 + [4~7]
 
-herons_loop = 2;
-if score x matches 0..30967 : estimate = x/112 + 7
-if score x matches 30968..5560119 : estimate = x/2029 + 267
-if score x matches 5560120..232440383 : estimate = x/15392 + 2645
-if score x matches 232440384..2147483647 : estimate = x/65536 + [12666~14199]
-
-herons_loop = 1;
-if score x matches 0..781 : estimate = x/23 + 3
-if score x matches 782..24956 : estimate = x/172 + 32
-if score x matches 24957..264135 : estimate = x/644 + 138
-if score x matches 264136..1615382 : estimate = x/1742 + 396
-if score x matches 1615383..7006574 : estimate = x/3856 + 904
-if score x matches 7006575..24088280 : estimate = x/7464 + 1782
-if score x matches 24088281..70123724 : estimate = x/13166 + 3179
-if score x matches 70123725..179720752 : estimate = x/21632 + 5263
-if score x matches 179720753..416771846 : estimate = x/33632 + 8227
-if score x matches 416771847..891917930 : estimate = x/50054 + 12292
-if score x matches 891917931..1786161014 : estimate = x/71860 + 17699
-if score x matches 1786161015..2147483647 : estimate = x/98304 + [24193~24385]
+#define HERONS_LOOP 1
+if score x matches 1090518529..2147483647 : estimate = x/79088 + 19493
+if score x matches 520068025..1090518528 : estimate = x/55598 + 13666
+if score x matches 229734649..520068024 : estimate = x/37772 + 9251
+if score x matches 92428996..229734648 : estimate = x/24614 + 5999
+if score x matches 33028009..92428995 : estimate = x/15240 + 3689
+if score x matches 10118761..33028008 : estimate = x/8836 + 2117
+if score x matches 2515396..10118760 : estimate = x/4700 + 1109
+if score x matches 462400..2515395 : estimate = x/2220 + 510
+if score x matches 52441..462399 : estimate = x/882 + 193
+if score x matches 2401..52440 : estimate = x/264 + 52
+if score x matches 9..2400 : estimate = x/48 + 8
+if score x matches 0..8 : estimate = x/1073741824 + [2~3]
 */

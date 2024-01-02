@@ -1,31 +1,64 @@
 #include <math.h>
 #include <stdint.h>
-#define isqrt(x) ((int64_t)sqrt(x))
-#define floordiv(a,b) (((b)==0) ? (a) : ((((a)^(b))>0) ? ((a)/(b)) : ((a)/(b) - ((a)%(b)!=0))))
+#define isqrt(x) ((int32_t)sqrt(x))
+#define floordiv(x,y) (((y)==0) ? (x) : ( (x)/(y) - ((((x)^(y)) < 0) ? ((x)%(y) != 0) : (0) )))
+#define ufloordiv(x,y) (((y)==0) ? (x) : (x/y))
 
-int64_t herons_loop = 3;
+#ifndef HERONS_LOOP
+    #define HERONS_LOOP 3
+#endif
 
-int64_t herons_method(int64_t x, int64_t estimate) {
+
+static inline int32_t herons_method(int32_t x, int32_t estimate) {
     // https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Heron's_method
-    switch (herons_loop) {
-        default:
-            for (int64_t i=herons_loop; i>4; i--)
-                estimate = (estimate+floordiv(x,estimate))>>1;
-        case 4: estimate = (estimate+floordiv(x,estimate))>>1;
-        case 3: estimate = (estimate+floordiv(x,estimate))>>1;
-        case 2: estimate = (estimate+floordiv(x,estimate))>>1;
-        case 1: estimate = (estimate+floordiv(x,estimate))>>1;
-        case 0:
-    }
+    #if HERONS_LOOP >= 5
+        for (int32_t i=HERONS_LOOP; i>4; i--)
+            estimate = (estimate+floordiv(x,estimate))>>1;
+    #endif
+    #if HERONS_LOOP >= 4
+        estimate = (estimate+floordiv(x,estimate))>>1;
+    #endif
+    #if HERONS_LOOP >= 3
+        estimate = (estimate+floordiv(x,estimate))>>1;
+    #endif
+    #if HERONS_LOOP >= 2
+        estimate = (estimate+floordiv(x,estimate))>>1;
+    #endif
+    #if HERONS_LOOP >= 1
+        estimate = (estimate+floordiv(x,estimate))>>1;
+    #endif
     return (floordiv(x,estimate) < estimate) ? (estimate-1) : (estimate);
 }
 
-int64_t herons_lowerbound(int64_t x, int64_t y) {
-    int64_t left=1, right=y;
+static inline bool herons_method_check(int32_t x, int32_t estimate, int32_t y) {
+    #if HERONS_LOOP >= 5
+    for (int32_t i=HERONS_LOOP; i>4; i--)
+        estimate = (estimate+floordiv(x,estimate))>>1;
+    #endif
+    #if HERONS_LOOP >= 4
+        estimate = (estimate+floordiv(x,estimate))>>1;
+    #endif
+    #if HERONS_LOOP >= 3
+        estimate = (estimate+floordiv(x,estimate))>>1;
+    #endif
+    #if HERONS_LOOP >= 2
+        estimate = (estimate+floordiv(x,estimate))>>1;
+    #endif
+    #if HERONS_LOOP >= 1
+        estimate = estimate + floordiv(x,estimate) - (y<<1);
+        return (0 <= estimate && estimate <= 3);
+    #endif
+    #if HERONS_LOOP == 0
+        return (estimate == y || estimate-1 == y);
+    #endif
+}
+
+int32_t herons_lowerbound(int32_t x, int32_t y) {
+    int32_t left=1, right=y;
     if (left >= right) return left;
-    int64_t mid = (left+right)>>1;
+    int32_t mid = (left+right)>>1;
     while (1) {
-        if (herons_method(x,mid) == y) {
+        if (herons_method_check(x,mid,y)) {
             if (left==mid) return mid;
             right = mid;
             mid += left;
@@ -38,11 +71,11 @@ int64_t herons_lowerbound(int64_t x, int64_t y) {
     }
 }
 
-int64_t herons_upperbound(int64_t x, int64_t y) {
-    int64_t left=y+1, right=100000;
-    int64_t mid = (left+right)>>1;
+int32_t herons_upperbound(int32_t x, int32_t y) {
+    int32_t left=y+1, right=100000;
+    int32_t mid = (left+right)>>1;
     while (1) {
-        if (herons_method(x,mid) == y) {
+        if (herons_method_check(x,mid,y)) {
             if (right==++mid) return mid-1;
             left = mid;
             mid += right;

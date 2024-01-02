@@ -1,21 +1,26 @@
 #include <stdio.h>
 #include <stdbool.h>
+#define HERONS_LOOP 2
 #include "isqrt.c"
 
 
-bool linear_touch_ceil(int64_t startx, int64_t divisior, int64_t *bestendx, int64_t *bestdiv, int64_t *bestaddmin, int64_t *bestaddmax) {
-    int64_t divm1 = divisior-1;
-    int64_t x = startx;
-    int64_t estimate = x/divisior;
-    int64_t estimatenext = divm1 - x%divisior;
-    int64_t sqrtx = isqrt(x);
-    int64_t sqrtnext = (sqrtx<<1) - x + sqrtx*sqrtx;
-    int64_t lower = herons_lowerbound(x,sqrtx)-estimate;
-    int64_t upper = herons_upperbound(x,sqrtx)-estimate;
-    int64_t t;
+bool linear_touch_ceil(int64_t startx, int64_t div, int64_t *bestendx, int64_t *bestdiv, int64_t *bestaddmin, int64_t *bestaddmax) {
+    int32_t divisior = (int32_t)div;
+    if (divisior == 0) divisior = 1;
+    int32_t divm1 = divisior-1;
+    int32_t x = (int32_t)startx;
+    int32_t estimate = x/divisior;
+    int32_t estimatenext = divm1 - x%divisior;
+    int32_t sqrtx = isqrt(x);
+    int32_t sqrtnext = (sqrtx<<1) - x + sqrtx*sqrtx;
+    int32_t lower = herons_lowerbound(x,sqrtx)-estimate;
+    int32_t upper = herons_upperbound(x,sqrtx)-estimate;
+    int32_t t;
     
 
-    for (x=x+1; x<=2147483647; x++) {
+    while (1) {
+        if (x == 2147483647) break;
+        x++;
         estimatenext--;
         if (estimatenext == -1) {
             estimate++;
@@ -26,23 +31,22 @@ bool linear_touch_ceil(int64_t startx, int64_t divisior, int64_t *bestendx, int6
             sqrtx++;
             sqrtnext = sqrtx<<1;
         }
-        if (sqrtx != herons_method(x,estimate+lower)) {
+        if (!herons_method_check(x,estimate+lower,sqrtx)) {
             t = herons_lowerbound(x,sqrtx)-estimate;
-            if (upper < t || t < lower) break;
+            if (upper < t || t < lower) { x--; break; }
             lower = t;
         }
-        if (sqrtx != herons_method(x,estimate+upper)) {
+        if (!herons_method_check(x,estimate+upper,sqrtx)) {
             upper = herons_upperbound(x,sqrtx)-estimate;
         }
     }
-    x--;
     if ((*bestendx) < x) {
-        *bestendx = x;
-        *bestdiv = divisior;
-        *bestaddmin = lower;
-        *bestaddmax = upper;
+        *bestendx = (int64_t)x;
+        *bestdiv = (int64_t)div;
+        *bestaddmin = (int64_t)lower;
+        *bestaddmax = (int64_t)upper;
     }
-    x++;
+    if (x != 2147483647) x++;
     estimate = x/divisior + upper;
     upper = herons_upperbound(x,isqrt(x));
     return (estimate > upper);
@@ -53,7 +57,7 @@ void find_best_linear_estimate(int64_t startx, int64_t *outendx, int64_t *outdiv
     int64_t divmax = 2147483647;
     int64_t divmid,bestendx=startx,bestdiv,bestaddmin,bestaddmax;
     while (1) {
-        //printf("searching div=%lld~%lld\n",divmin,divmax);
+        // printf("searching div=%lld~%lld\n",divmin,divmax);
         divmid = (divmin+divmax)>>1;
         bool check = linear_touch_ceil(startx,divmid,&bestendx,&bestdiv,&bestaddmin,&bestaddmax);
         if (bestendx >= 2147483647)
@@ -76,7 +80,6 @@ void find_best_linear_estimate(int64_t startx, int64_t *outendx, int64_t *outdiv
 int main(void) {
     int64_t startx=0,endx=0,div,bestdiv,addmin,addmax;
 
-    herons_loop = 1;
     startx = 0;
 
     while (startx <= 2147483647) {
