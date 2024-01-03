@@ -65,7 +65,7 @@ bool rational_touch_ceil(bool is_div, int64_t ina, int64_t inb, int64_t startx, 
 
 
 void find_best_rational_estimate_with_a(bool is_div, int64_t a, int64_t startx, int64_t *outendx, int64_t *outb, int64_t *outcmin, int64_t *outcmax) {
-    int64_t minb = 0;
+    int64_t minb = 1;
     int64_t maxb = 2147483647;
     int64_t endx,cmin,cmax;
     int64_t bestendx=-1,bestb=-1,bestcmin=-1,bestcmax=-1;
@@ -139,7 +139,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
     // }
     // goto lastreturn;
 
-
+    
     int64_t a_best_left=-1,a_best_right=-1,a_best_endx=-1;
     printf("initial search a=[%lld~%lld]\n",a_left,a_right);
     for (a=TEST_RANGE; a<=a_right; a=(int64_t)(a*1.5)+TEST_RANGE) {
@@ -161,8 +161,12 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
             a_best_right = ((a*1.5)+TEST_RANGE)*1.5+TEST_RANGE;
         }
     }
-    a_left = max(0,a_best_left);
+    a_left = max(1,a_best_left);
     a_right = min(2147483647,a_best_right);
+    // int64_t a_best_left = ((514-TEST_RANGE)/1.5-TEST_RANGE)/1.5;
+    // int64_t a_best_right = ((514*1.5)+TEST_RANGE)*1.5+TEST_RANGE;
+    // a_left = max(0,a_best_left);
+    // a_right = min(2147483647,a_best_right);
 
 
     int64_t golden_offset = (int64_t)floor((a_right - a_left)*0.381966011250105);
@@ -213,7 +217,7 @@ void find_best_rational_estimate(int64_t startx, bool is_div, int64_t *outendx, 
 
         while (1) {
             printf("%lld vs %lld\n",a_left_golden_endx,a_right_golden_endx);
-            if (a_left_golden_endx < a_right_golden_endx) {
+            if (a_left_golden_endx <= a_right_golden_endx) {
                 a_left = a_left_golden;
                 a_left_golden = a_right_golden;
                 a_left_golden_left = a_right_golden_left;
@@ -318,7 +322,7 @@ int main(void) {
 	int64_t startx,endx,a,b,cmin,cmax;
     bool is_div;
 
-    startx=0; is_div=false;
+    startx=1713396; is_div=true;
 
     find_best_rational_estimate(startx,is_div,&endx,&a,&b,&cmin,&cmax);
     if (is_div)
@@ -340,7 +344,7 @@ herons_loop = 1;
 startx=0; is_div=false;
     if score x matches 0..19310 : estimate = -594039/(x+4095)+149
 startx=19311; is_div=false;
-    if score x matches 19311..1705544 : estimate = -1568669636/(x+903167)+1857
+    if score x matches 19311..1713395 : estimate = -1585275779/(x+909823)+1863
 startx=1705545; is_div=true;
     if score x matches 1705545..39400514 : estimate = -2147483648/(x/141+224767)+10425
 startx=39400515; is_div=true;
