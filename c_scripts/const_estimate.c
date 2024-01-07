@@ -1,49 +1,35 @@
 #include <stdio.h>
-#include "isqrt.c"
+#include <stdlib.h>
+#include "isqrt.h"
 
 
-void find_best_const_estimate(int64_t x, int64_t *outendx, int64_t *outconstmin, int64_t *outconstmax) {
-    int64_t sqrtx = isqrt(x);
-    int64_t sqrtnext = (sqrtx<<1) - x + sqrtx*sqrtx;
-    int64_t lower = herons_lowerbound(x,sqrtx);
-    int64_t upper = herons_upperbound(x,sqrtx);
-    int64_t t;
-    for (x=x+1; x<=2147483647; x++) {
+void find_best_const_estimate(int64_t startx, int64_t *outendx, int64_t *outconstmin, int64_t *outconstmax) {
+    int32_t x = (int32_t)startx;
+    int32_t sqrtx = isqrt(x);
+    int32_t sqrtnext = (sqrtx<<1) - x + sqrtx*sqrtx;
+    int32_t lower = herons_lowerbound(x,sqrtx);
+    int32_t upper = herons_upperbound(x,sqrtx);
+    int32_t t;
+    while (1) {
+        if (x==2147483647) break;
+        x++;
         sqrtnext--;
         if (sqrtnext == -1) {
             sqrtx++;
             sqrtnext = sqrtx<<1;
         }
-        if (sqrtx != herons_method(x,lower)) {
+        if (!herons_method_check(x,lower,sqrtx)) {
             t = herons_lowerbound(x,sqrtx);
-            if (upper < t || t < lower) break;
+            if (upper < t || t < lower) { x--; break; }
             lower = t;
         }
-        if (sqrtx != herons_method(x,upper)) {
+        if (!herons_method_check(x,upper,sqrtx)) {
             upper = herons_upperbound(x,sqrtx);
         }
     }
-    *outendx = x-1;
-    *outconstmin = lower;
-    *outconstmax = upper;
-}
-
-int main(void) {
-    int64_t startx, endx, constmin, constmax;
-
-    herons_loop = 3;
-    startx = 0;
-
-    while (startx <= 2147483647) {
-        find_best_const_estimate(startx,&endx,&constmin,&constmax);
-        if (constmin == constmax)
-            printf("if x matches %lld..%lld : estimate = %lld\n",startx,endx,constmin);
-        else
-            printf("if x matches %lld..%lld : estimate = [%lld~%lld]\n",startx,endx,constmin,constmax);
-        startx = endx+1;
-    }
-    printf("end");
-    return 0;
+    *outendx = (int64_t)x;
+    *outconstmin = (int64_t)lower;
+    *outconstmax = (int64_t)upper;
 }
 
 /*

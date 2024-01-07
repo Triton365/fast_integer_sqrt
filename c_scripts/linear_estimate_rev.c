@@ -1,7 +1,6 @@
 #include <stdio.h>
-#include <stdbool.h>
-#define HERONS_LOOP 1
-#include "isqrt.c"
+#include <stdlib.h>
+#include "isqrt.h"
 
 
 bool linear_touch_ceil_rev(int64_t startx, int64_t div, int64_t *bestendx, int64_t *bestdiv, int64_t *bestaddmin, int64_t *bestaddmax) {
@@ -74,24 +73,6 @@ void find_best_linear_estimate_rev(int64_t startx, int64_t *outendx, int64_t *ou
     *outaddmax = bestaddmax;
     *outendx = bestendx;
     return;
-}
-
-
-int main(void) {
-    int64_t startx=0,endx=0,div,bestdiv,addmin,addmax;
-
-    startx = 2147483647;
-
-    while (startx >= 0) {
-        find_best_linear_estimate_rev(startx,&endx,&div,&addmin,&addmax);
-        if (addmin == addmax)
-            printf("if score x matches %lld..%lld : estimate = x/%lld + %lld\n",endx,startx,div,addmin);
-        else
-            printf("if score x matches %lld..%lld : estimate = x/%lld + [%lld~%lld]\n",endx,startx,div,addmin,addmax);
-        startx = endx-1;
-    }
-    printf("end");
-    return 0;
 }
 
 /*

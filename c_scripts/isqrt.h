@@ -1,11 +1,15 @@
+#ifndef ISQRT_H
+#define ISQRT_H
+
 #include <math.h>
 #include <stdint.h>
+#include <stdbool.h>
 #define isqrt(x) ((int32_t)sqrt(x))
 #define floordiv(x,y) (((y)==0) ? (x) : ( (x)/(y) - ((((x)^(y)) < 0) ? ((x)%(y) != 0) : (0) )))
 #define ufloordiv(x,y) (((y)==0) ? (x) : (x/y))
 
 #ifndef HERONS_LOOP
-    #define HERONS_LOOP 3
+    #define HERONS_LOOP 2
 #endif
 
 
@@ -87,3 +91,4 @@ int32_t herons_upperbound(int32_t x, int32_t y) {
         mid >>= 1;
     }
 }
+#endif
