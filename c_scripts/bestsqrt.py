@@ -125,10 +125,16 @@ fileappendsafe.threadbefore = None
 
 
 
+
 def get_estimate(loops,string,startx):
     print(loops,string,startx)
     if get_estimate.cache == None:
-        get_estimate.cache = dict()
+        get_estimate.cache = {
+                             'isqrt_l2 linear_estimate_rev 2147483647':{'HERONS_LOOP':2,'type':'linear_estimate_rev','startx':2147483647,'endx':93605625,'div':50704,'cmin':9628,'cmax':9628},
+                             'isqrt_l1 rational_estimate_rev 2147483647':{'HERONS_LOOP':1,'type':'rational_estimate_rev','startx':2147483647,'is_div':True,'endx':262148481,'a':95355,'b':26467,'cmin':89876,'cmax':89876},
+                             'isqrt_l1 linear_estimate_rev 2147483647':{'HERONS_LOOP':1,'type':'linear_estimate_rev','startx':2147483647,'endx':1090518529,'div':79088,'cmin':19493,'cmax':19493},
+                             'isqrt_l0 rational_estimate_rev 2147483647':{'HERONS_LOOP':0,'type':'rational_estimate_rev','startx':2147483647,'is_div':True,'endx':2116552113,'a':41067,'b':17584,'cmin':77074,'cmax':77074}
+                             }
         try:
             with open('isqrt_estimate_cache.txt','r') as f:
                 lines = f.read().rstrip().split('\n')
@@ -139,15 +145,6 @@ def get_estimate(loops,string,startx):
                 get_estimate.cache[key] = data
         except:
             pass
-    if startx >= 93605625:
-        if startx >= 93605625 and string == 'linear_estimate' and loops == 2:
-            return {'HERONS_LOOP':2,'type':'linear_estimate','startx':startx,'endx':2147483647,'div':50704,'cmin':9628,'cmax':9628}
-        if startx >= 262148481 and string == 'rational_estimate' and loops == 1:
-            return {'HERONS_LOOP':1,'type':'rational_estimate','startx':startx,'is_div':True,'endx':2147483647,'a':95355,'b':26467,'cmin':89876,'cmax':89876}
-        if startx >= 1090518529 and string == 'linear_estimate' and loops == 1:
-            return {'HERONS_LOOP':1,'type':'linear_estimate','startx':startx,'endx':2147483647,'div':79088,'cmin':19493,'cmax':19493}
-        if startx >= 93605625 and string == 'rational_estimate' and loops == 0:
-            return {'HERONS_LOOP':0,'type':'rational_estimate','startx':startx,'is_div':True,'endx':2147483647,'a':41067,'b':17584,'cmin':77074,'cmax':77074}
     try:
         cmd = ['isqrt_l%d'%loops,string,str(startx)]
         key = ' '.join(cmd)
@@ -175,7 +172,12 @@ get_estimate.cache = None
 
 
 
-available_estimates = [{'HERONS_LOOP':0,'type':'rational_estimate'},{'HERONS_LOOP':1,'type':'linear_estimate'},{'HERONS_LOOP':1,'type':'rational_estimate'},{'HERONS_LOOP':2,'type':'linear_estimate'}]
+available_estimates = [
+    {'HERONS_LOOP':2,'type':'linear_estimate_rev'},
+    {'HERONS_LOOP':1,'type':'rational_estimate_rev'},
+    {'HERONS_LOOP':1,'type':'linear_estimate_rev'},
+    {'HERONS_LOOP':0,'type':'rational_estimate_rev'}
+]
 
 
 class EstimateTree:
@@ -188,13 +190,13 @@ class EstimateTree:
     def search_next_depth(self,result):
         if self.children == None:
             self.children = []
-            startx = self.data['endx']+1
+            startx = self.data['endx']-1
             for l in range(self.level,len(available_estimates)):
                 estimate = available_estimates[l]
                 data = get_estimate(estimate['HERONS_LOOP'],estimate['type'],startx)
                 child = EstimateTree(self,data,l)
                 self.children.append(child)
-                if data['endx'] == 2147483647:
+                if data['endx'] <= 0:
                     root = self.root
                     arr = [child.data,self.data]
                     while root != None:
@@ -211,14 +213,15 @@ class EstimateTree:
 
 
 
-maintree = EstimateTree(None,{'endx':-1},0)
+maintree = EstimateTree(None,{'endx':2147483648},0)
 result = []
 maintree.search_next_depth(result)
 maintree.search_next_depth(result)
 maintree.search_next_depth(result)
 maintree.search_next_depth(result)
 print(result)
-
+print("end")
+input()
 
 
 # cost = [1,1,1,1,1,1,1,1,1,1,1,1]
