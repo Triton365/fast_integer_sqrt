@@ -97,21 +97,6 @@ class ReturnFunctionTree:
         return min_trees
 
 
-    @classmethod
-    def print_with_cost(cls,tree,cost,indent='',first=True):
-        if first:
-            cls.get_cost(tree)
-            cost = sorted(list(enumerate(cost)),key=lambda x:x[1],reverse=True)
-        for x in tree:
-            if isinstance(x,list):
-                result.append(indent+'execute if ... run return run function ...\n')
-                result.append(cls.print_with_cost(x,'    '+indent))
-            else:
-                result.append(indent+'command')
-        return ''.join(result)
-
-
-
 
 def fileappend(filename,text):
     with open(filename,'a') as f:
@@ -145,6 +130,15 @@ def get_estimate(loops,string,startx):
                 get_estimate.cache[key] = data
         except:
             pass
+    if startx <= 30967:
+        if loops == 2 and string == 'linear_estimate_rev' and startx <= 30967:
+            return {'HERONS_LOOP':2,'type':'linear_estimate_rev','startx':startx,'endx':0,'div':112,'cmin':7,'cmax':7}
+        if loops == 1 and string == 'rational_estimate_rev' and startx <= 19310:
+            return {'HERONS_LOOP':1,'type':'rational_estimate_rev','startx':startx,'is_div':False,'endx':0,'a':594039,'b':4095,'cmin':149,'cmax':149}
+        if loops == 1 and string == 'linear_estimate_rev' and startx <= 781:
+            return {'HERONS_LOOP':1,'type':'linear_estimate_rev','startx':startx,'endx':0,'div':23,'cmin':3,'cmax':3}
+        if loops == 0 and string == 'rational_estimate_rev' and startx <= 288:
+            return {'HERONS_LOOP':0,'type':'rational_estimate_rev','startx':startx,'is_div':False,'endx':0,'a':3660,'b':159,'cmin':25,'cmax':25}
     try:
         cmd = ['isqrt_l%d'%loops,string,str(startx)]
         key = ' '.join(cmd)
@@ -195,14 +189,31 @@ class EstimateTree:
                 estimate = available_estimates[l]
                 data = get_estimate(estimate['HERONS_LOOP'],estimate['type'],startx)
                 child = EstimateTree(self,data,l)
-                self.children.append(child)
-                if data['endx'] <= 0:
+                if data['endx'] >= 1:
+                    self.children.append(child)
+                else:
                     root = self.root
-                    arr = [child.data,self.data]
+                    arr = [child,self]
                     while root != None:
-                        arr.append(root.data)
+                        arr.append(root)
                         root = root.root
-                    result.append(arr)
+                    for i in range(len(result)-1,-1,-1):
+                        res = result[i]
+                        smaller = True
+                        bigger = True
+                        for a,b in zip(arr,res):
+                            if a.level < b.level:
+                                bigger = False
+                            if a.level > b.level:
+                                smaller = False
+                        if smaller == bigger == True:
+                            raise Exception('???')
+                        if smaller:
+                            break
+                        if bigger:
+                            del result[i]
+                    else:
+                        result.append(arr)
         else:
             for i in range(len(self.children)-1,-1,-1):
                 r = self.children[i].search_next_depth(result)
@@ -210,22 +221,50 @@ class EstimateTree:
                     del self.children[i]
         return len(self.children) >= 1
 
+    def get_cost(self):
+        if self.data['type'] in ('linear_estimate','linear_estimate_rev'):
+            if self.data['HERONS_LOOP'] == 1:
+                return 10
+            if self.data['HERONS_LOOP'] == 2:
+                return 14
+        if self.data['type'] in ('rational_estimate','rational_estimate_rev'):
+            if self.data['is_div'] == True:
+                if self.data['HERONS_LOOP'] == 0:
+                    return 9
+                if self.data['HERONS_LOOP'] == 1:
+                    return 13
+            else:
+                if self.data['HERONS_LOOP'] == 0:
+                    return 8
+                if self.data['HERONS_LOOP'] == 1:
+                    return 12
 
 
 
 maintree = EstimateTree(None,{'endx':2147483648},0)
-result = []
-maintree.search_next_depth(result)
-maintree.search_next_depth(result)
-maintree.search_next_depth(result)
-maintree.search_next_depth(result)
-print(result)
-print("end")
-input()
 
+for i in range(14):
+    result = []
+    maintree.search_next_depth(result)
 
-# cost = [1,1,1,1,1,1,1,1,1,1,1,1]
-# trees = ReturnFunctionTree.find_best(cost)
-# print(trees)
+for res in result:
+    res = res[:-1]
+    estimate_costs = [estimate.get_cost() for estimate in res]
+    best_function_tree = ReturnFunctionTree.find_best(estimate_costs)
+    print()
+    print('estimate methods :',[estimate.data['type']+'-'+str(estimate.data['HERONS_LOOP']) for estimate in res])
+    print('estimate costs :',estimate_costs)
+    print('best function tree :',best_function_tree)
+    tree_costs = sorted(ReturnFunctionTree.get_cost(best_function_tree[0]),reverse=True)
+    estimate_costs = sorted(estimate_costs)
+    for i in range(len(tree_costs)):
+        tree_costs[i] += estimate_costs[i]
+    print(f'max={max(tree_costs)} avg={sum(tree_costs)/len(tree_costs)}')
+print('end')
 
-# print(get_estimate(1,'rational_estimate',0))
+'''
+estimate methods : ['rational_estimate_rev-0', 'rational_estimate_rev-0', 'rational_estimate_rev-0', 'rational_estimate_rev-0', 'rational_estimate_rev-0', 'rational_estimate_rev-0', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1']
+estimate costs : [8, 8, 8, 8, 8, 8, 10, 10, 10, 10, 10, 10, 10, 10]
+best function tree : [[[[[1], 1], [1], [1], 1], [[1], [1], 1], [[1], 1], [1], [1], [1], 1]]
+max=16.0 avg=15.464285714285714
+'''
