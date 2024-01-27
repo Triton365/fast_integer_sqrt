@@ -4,6 +4,7 @@ from math import isqrt
 f = open('lut_load.mcfunction','w')
 fwrite = f.write
 lut = []
+fwrite('scoreboard objectives add sqrt dummy\n')
 
 
 # lut[0] = 1
