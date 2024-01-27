@@ -240,10 +240,22 @@ class EstimateTree:
                     return 12
 
 
+# startx = 1713396
+# while startx < 2147483648:
+#     data = get_estimate(1,'linear_estimate',startx)
+#     endx = data['endx']
+#     div = data['div']
+#     cmin = data['cmin']
+#     cmax = data['cmax']
+#     print(f'if score x matches {startx}..{endx} : estimate = x/{div}+{cmin}')
+#     startx = endx+1
+# exit()
+
+
 
 maintree = EstimateTree(None,{'endx':2147483648},0)
 
-for i in range(14):
+for i in range(5):
     result = []
     maintree.search_next_depth(result)
 
@@ -260,7 +272,19 @@ for res in result:
     for i in range(len(tree_costs)):
         tree_costs[i] += estimate_costs[i]
     print(f'max={max(tree_costs)} avg={sum(tree_costs)/len(tree_costs)}')
+    print([estimate.data for estimate in res])
 print('end')
+
+
+estimate_costs = [8,12,12,13,14]
+best_function_tree = ReturnFunctionTree.find_best(estimate_costs)
+tree_costs = sorted(ReturnFunctionTree.get_cost(best_function_tree[0]),reverse=True)
+estimate_costs = sorted(estimate_costs)
+for i in range(len(tree_costs)):
+    tree_costs[i] += estimate_costs[i]
+print(best_function_tree[0])
+print(f'max={max(tree_costs)} avg={sum(tree_costs)/len(tree_costs)}')
+
 
 '''
 estimate methods : ['rational_estimate_rev-0', 'rational_estimate_rev-0', 'rational_estimate_rev-0', 'rational_estimate_rev-0', 'rational_estimate_rev-0', 'rational_estimate_rev-0', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1', 'linear_estimate_rev-1']

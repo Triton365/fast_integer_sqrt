@@ -280,3 +280,11 @@
 {"HERONS_LOOP":0,"type":"rational_estimate_rev","startx":30151080,"is_div":true,"endx":19404025,"a":455,"b":162052,"cmin":14897,"cmax":14897}
 {"HERONS_LOOP":0,"type":"rational_estimate_rev","startx":1670359343,"is_div":true,"endx":1642681300,"a":35633,"b":23552,"cmin":71362,"cmax":71362}
 {"HERONS_LOOP":0,"type":"rational_estimate_rev","startx":721949291,"is_div":true,"endx":696805440,"a":35697,"b":36742,"cmin":64567,"cmax":64567}
+{"HERONS_LOOP":1,"type":"linear_estimate","startx":1713396,"endx":7349467,"div":3955,"cmin":928,"cmax":928}
+{"HERONS_LOOP":1,"type":"linear_estimate","startx":7349468,"endx":25109942,"div":7632,"cmin":1823,"cmax":1823}
+{"HERONS_LOOP":1,"type":"linear_estimate","startx":25109943,"endx":72658469,"div":13418,"cmin":3241,"cmax":3241}
+{"HERONS_LOOP":1,"type":"linear_estimate","startx":72658470,"endx":185504084,"div":21992,"cmin":5352,"cmax":5352}
+{"HERONS_LOOP":1,"type":"linear_estimate","startx":185504085,"endx":428862483,"div":34142,"cmin":8353,"cmax":8353}
+{"HERONS_LOOP":1,"type":"linear_estimate","startx":428862484,"endx":915183492,"div":50736,"cmin":12461,"cmax":12461}
+{"HERONS_LOOP":1,"type":"linear_estimate","startx":915183493,"endx":1828075199,"div":72733,"cmin":17916,"cmax":17916}
+{"HERONS_LOOP":1,"type":"linear_estimate","startx":1828075200,"endx":2147483647,"div":98304,"cmin":24193,"cmax":24453}
