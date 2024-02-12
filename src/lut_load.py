@@ -1,23 +1,12 @@
 from math import isqrt
 
 
-f = open('lut_load.mcfunction','w')
-fwrite = f.write
-lut = []
-fwrite('scoreboard objectives add sqrt dummy\n')
-
-
 # lut[0] = 1
-fwrite('data modify storage sqrt: lut set value [\\\n    1')
-lut.append(1)
-assert len(lut) == 1
+lut = [1]
 
 
 # lut[1~467] = 0
-for _ in range(1,468):
-    fwrite(',0')
-    lut.append(0)
-fwrite('\\\n   ')
+lut += [0]*467
 assert len(lut) == 468
 
 
@@ -27,9 +16,7 @@ xmax = 960511 - DIV
 while xmax <= 2147483647:
     xmax += DIV
     xmaxsqrt = isqrt(xmax)
-    fwrite(',%d'%xmaxsqrt)
     lut.append(xmaxsqrt)
-fwrite('\\\n   ')
 assert len(lut) == 1048577
 
 
@@ -38,11 +25,8 @@ xmax = 958463 + 4
 while xmax >= 8:
     xmax -= 4
     xmaxsqrt = isqrt(xmax)
-    fwrite(',%d'%xmaxsqrt)
     lut.append(xmaxsqrt)
-fwrite('\\\n]')
 print(len(lut))
-f.close()
 
 
 def sqrt_lut(x):
@@ -54,3 +38,31 @@ def sqrt_lut(x):
     if y > x: return y-1
     return y
 
+
+with open('lut_load.mcfunction','w') as f:
+    firstline = True
+    doublebracket = False
+
+    string = 'data modify storage sqrt: lut set value [' + str(lut[0])
+    length = len(string)
+    f.write(string)
+    for x in lut[1:]:
+        string = ','+str(x)
+        length += len(string)
+        if length >= 1999999:
+            if firstline:
+                string = ']\ndata modify storage sqrt: temp set value [[' + str(x)
+                firstline = False
+                doublebracket = True
+            elif doublebracket:
+                string = ']]\ndata modify storage sqrt: temp append value [' + str(x)
+                doublebracket = False
+            else:
+                string = ']\ndata modify storage sqrt: temp append value [' + str(x)
+            length = len(string)
+        f.write(string)
+    if doublebracket:
+        f.write(']')
+    f.write(']\ndata modify storage sqrt: lut append from storage sqrt: temp[][]')
+    f.write('\ndata remove storage sqrt: temp')
+    f.write('\nscoreboard objectives add sqrt dummy')
